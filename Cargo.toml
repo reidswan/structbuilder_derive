@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Reid Swan <reidswan@outlook.com>"]
 edition = "2018"
 description = "Super simple macro to derive a builder trait for your struct"
+repository = "https://github.com/reidswan/structbuilder_derive"
+homepage = "https://github.com/reidswan/structbuilder_derive"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
