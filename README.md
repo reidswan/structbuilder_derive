@@ -1,10 +1,18 @@
-# structbuilder_derive
+# structbuilder_derive &emsp; [![Latest Version]][crates.io] 
+
+[Latest Version]: https://img.shields.io/crates/v/structbuilder_derive.svg
+[crates.io]: https://crates.io/crates/structbuilder_derive
 
 A simple [rust-lang](https://www.rust-lang.org) macro to derive a `_Builder` trait for your struct. The trait lets you build up a struct in a modular fashion, and provides read-only reference access to members. 
 
 ## Usage
 
-Add the crate as a dependency in your Cargo.toml (coming soon).
+Add the crate as a dependency in your Cargo.toml:
+
+```
+[dependencies]
+structbuilder_derive = "1.0"
+```
 
 
 The simply import the deriver and add the `derive(StructBuilder)` directive as follows:
