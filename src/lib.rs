@@ -27,7 +27,7 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
                     .ident
                     .as_ref()
                     .expect("Tuple-style structs are not supported");
-                if let Some(ty) = get_option_type(f.ty.clone()) {
+                if let Some(ty) = get_option_type(&f.ty) {
                     optional_field_type.push(ty);
                     optional_field_name.push(ident);
                 } else {
@@ -146,19 +146,19 @@ fn camel_to_snake(src: &String)-> String {
 }
 
 // ugly hack to guess if the type is an Option<A> for some concrete A
-fn get_option_type(ty: Type) -> Option<Type> {
+fn get_option_type(ty: &Type) -> Option<Type> {
     let path_type = match ty {
         Type::Path(pty) => pty,
         _ => return None,
     };
-    let last_type = match path_type.path.segments.into_iter().last() {
+    let last_type = match path_type.path.segments.iter().last() {
         Some(t) => t,
         _ => return None,
     };
 
     let mut type_args = if last_type.ident == String::from("Option") {
-        match last_type.arguments {
-            PathArguments::AngleBracketed(a) => a.args.into_iter(),
+        match &last_type.arguments {
+            PathArguments::AngleBracketed(a) => a.args.iter(),
             _ => return None,
         }
     } else {
