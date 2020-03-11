@@ -43,3 +43,23 @@ fn test_composition_chain() {
     assert_eq!(my_struct.married(), &Some(false));
     
 }
+
+#[cfg(test)]
+mod supermod {
+    mod innermod {
+        use structbuilder_derive::*;
+        #[derive(StructBuilder)]
+        pub struct InnerStruct {
+            pub basic_thing: usize
+        }
+    }
+
+    use innermod::InnerStruct;
+
+    #[test]
+    fn test_accessors_without_trait_import() {
+        let my_struct = InnerStruct { basic_thing: 2 };
+
+        my_struct.basic_thing();
+    }
+}

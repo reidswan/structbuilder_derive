@@ -65,10 +65,15 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
         .collect::<Vec<_>>();
 
     let gen = quote! {
+
+        impl #name {
+            #(pub fn #exposed_field_name <'a> (&'a self)-> &'a #field_type {
+                &self. #field_name
+            })*
+        }
+
         pub trait #interface_name {
             fn new( #(#non_optional_field_name : #non_optional_field_type),* )-> Self;
-
-            #(fn #exposed_field_name <'a> (&'a self)-> &'a #field_type ;)*
             
             #(fn #builder_method_optional(self, #optional_field_name: #optional_field_type)-> Self;)*
             
@@ -82,10 +87,6 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
                     #( #optional_field_name : None ),*
                 }
             }
-
-            #(fn #exposed_field_name <'a> (&'a self)-> &'a #field_type {
-                &self. #field_name
-            })*
 
             #(fn #builder_method_optional(mut self, #optional_field_name: #optional_field_type)-> Self {
                 self. #optional_field_name = Some( #optional_field_name );
