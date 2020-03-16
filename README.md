@@ -11,7 +11,7 @@ Add the crate as a dependency in your Cargo.toml:
 
 ```
 [dependencies]
-structbuilder_derive = "1.0"
+structbuilder_derive = "0.2.1"
 ```
 
 
@@ -51,11 +51,19 @@ fn main() {
 
 The deriver also provides camelCase fields with snake_case accessors and setters; this is convenient with, for example, JSON and serde, where the external resource might provide a data shape like `{"userId": 12, "userName": "f.mal"}`; you can define your struct to match this, and allow serde to serialize and deserialize this structure, while allowing your code to use Rust-appropriate `.user_id()` and `.with_user_name(...)`.
 
+## Features
+- `new(..)` method for non-`Option`al fields
+- read-only, borrowing accessor methods for every declared field 
+- `with_<field_name>(..)` builder methods that consume and return `self` for every field
+- support for `Option<T>` types 
+  - not provided in the `new(..)` method
+  - `with_<field>` takes a `T` as a parameter if `<field>: Option<T>`
+- support for generics and lifetimes 
 
 ## Notes and warnings
 
-- only supported for non-generic, named structs. 
-  - `struct X<T> {...}` will be rejected
+- only supported for named structs. 
   - `struct X(...)` will be rejected
 - analysis of `Option` types is hacky. Using any type called `Option` in your struct will result in the macro treating it as `std::option::Option`
 - Definitely not production-ready. 
+- The lifetime name `'__sbderive` is used internally in accessor methods; attempting to use this lifetime will result in name conflicts.
