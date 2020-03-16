@@ -1,6 +1,6 @@
 [package]
 name = "structbuilder_derive"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Reid Swan <reidswan@outlook.com>"]
 edition = "2018"
 description = "Super simple macro to derive a builder trait for your struct"

@@ -2,7 +2,7 @@ extern crate proc_macro;
 
 use crate::proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{GenericArgument, PathArguments, Type};
+use syn::{GenericArgument, PathArguments, Type, Lifetime};
 
 #[proc_macro_derive(StructBuilder)]
 pub fn structbuilder_derive(input: TokenStream) -> TokenStream {
@@ -15,19 +15,28 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let (impl_generics, ty_generics, where_clause) = &ast.generics.split_for_impl();
     let interface_name = format_ident!("{}Builder", name);
+
     let mut non_optional_field_name = vec![];
     let mut non_optional_field_type = vec![];
     let mut optional_field_name = vec![];
     let mut optional_field_type = vec![];
     let mut field_name = vec![];
     let mut field_type = vec![];
+    let mut owned_field_name = vec![];
+    let mut owned_field_type = vec![];
+    let mut borrowed_field_name = vec![];
+    let mut borrowed_field_type = vec![];
+
     match &ast.data {
         syn::Data::Struct(d) => {
             d.fields.iter().for_each(|f| {
+                // get the field's declared name
                 let ident = f
                     .ident
                     .as_ref()
                     .expect("Tuple-style structs are not supported");
+
+                // check if the field is an Option type for constructors
                 if let Some(ty) = get_option_type(&f.ty) {
                     optional_field_type.push(ty);
                     optional_field_name.push(ident);
@@ -35,6 +44,17 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
                     non_optional_field_type.push(&f.ty);
                     non_optional_field_name.push(ident);
                 }
+
+                // check if the field is borrowed for accessors
+                if let Some(_lifetime) = get_lifetime(&f.ty) {
+                    borrowed_field_name.push(ident);
+                    borrowed_field_type.push(&f.ty);
+                } else {
+                    owned_field_name.push(ident);
+                    owned_field_type.push(&f.ty);
+                }
+
+                // for the new method, store all field names and types
                 field_name.push(ident);
                 field_type.push(&f.ty);
             });
@@ -42,6 +62,7 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
         _ => panic!("Only supported for structs"),
     };
 
+    // convert to a camel case identifier 
     let exposed_optional_field_name = optional_field_name
         .iter()
         .map(|n| format_ident!("{}", camel_to_snake(&n.to_string())))
@@ -51,6 +72,7 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
         .map(|n| format_ident!("{}", camel_to_snake(&n.to_string())))
         .collect::<Vec<_>>();
 
+    // add the with_ prefix for the builder methods
     let builder_method_optional = exposed_optional_field_name
         .iter()
         .map(|n| format_ident!("with_{}", n))
@@ -60,16 +82,26 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
         .map(|n| format_ident!("with_{}", n))
         .collect::<Vec<_>>();
 
-    let exposed_field_name = field_name
+    // convert to camel case for the accessor
+    let exposed_owned_field_name = owned_field_name
         .iter()
         .map(|n| format_ident!("{}", camel_to_snake(&n.to_string())))
         .collect::<Vec<_>>();
+    let exposed_borrowed_field_name = borrowed_field_name
+        .iter()
+        .map(|n| format_ident!("{}", camel_to_snake(&n.to_string())))
+        .collect::<Vec<_>>();
+    
 
     let gen = quote! {
 
         impl #impl_generics #name #ty_generics #where_clause {
-            #(pub fn #exposed_field_name <'a> (&'a self)-> &'a #field_type {
-                &self. #field_name
+            #(pub fn #exposed_owned_field_name <'__sbderive> (&'__sbderive self)-> &'__sbderive #owned_field_type {
+                &self. #owned_field_name
+            })*
+
+            #(pub fn #exposed_borrowed_field_name(&self)-> #borrowed_field_type {
+                self. #borrowed_field_name
             })*
         }
 
@@ -183,6 +215,16 @@ fn get_option_type(ty: &Type) -> Option<Type> {
         None
     }
 }
+
+
+fn get_lifetime(ty: &Type)-> Option<Lifetime> {
+    if let Type::Reference(ty_ref) = ty {
+        ty_ref.lifetime.to_owned()
+    } else {
+        None
+    }
+}
+
 
 #[cfg(test)]
 mod test {
