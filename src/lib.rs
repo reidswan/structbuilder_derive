@@ -13,6 +13,7 @@ pub fn structbuilder_derive(input: TokenStream) -> TokenStream {
 
 fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
+    let (impl_generics, ty_generics, where_clause) = &ast.generics.split_for_impl();
     let interface_name = format_ident!("{}Builder", name);
     let mut non_optional_field_name = vec![];
     let mut non_optional_field_type = vec![];
@@ -66,13 +67,13 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
 
     let gen = quote! {
 
-        impl #name {
+        impl #impl_generics #name #ty_generics #where_clause {
             #(pub fn #exposed_field_name <'a> (&'a self)-> &'a #field_type {
                 &self. #field_name
             })*
         }
 
-        pub trait #interface_name {
+        pub trait #interface_name #ty_generics #where_clause {
             fn new( #(#non_optional_field_name : #non_optional_field_type),* )-> Self;
             
             #(fn #builder_method_optional(self, #optional_field_name: #optional_field_type)-> Self;)*
@@ -80,7 +81,7 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
             #(fn #builder_method_non_optional(self, #non_optional_field_name: #non_optional_field_type)-> Self;)*
         }
 
-        impl #interface_name for #name {
+        impl #impl_generics #interface_name #ty_generics for #name #ty_generics #where_clause {
             fn new(#(#non_optional_field_name : #non_optional_field_type),*)-> Self {
                 Self {
                     #( #non_optional_field_name , )*
@@ -99,6 +100,7 @@ fn impl_structbuilder(ast: &syn::DeriveInput) -> TokenStream {
             })*
         }
     };
+
     gen.into()
 }
 
